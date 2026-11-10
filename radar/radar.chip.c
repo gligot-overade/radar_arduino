@@ -2,16 +2,44 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define DELAI_ENVOI_US 2000000u
-#define NOMBRE_CIBLES  4u
-#define TAILLE_TRAME   6u
+#define DELAI_ENVOI_US 120000u
+#define TAILLE_TRAME 6u
+#define NOMBRE_CIBLES 4u
+#define TAILLE_JEU (TAILLE_TRAME * NOMBRE_CIBLES)
 
-/* Header, ID, distance, vitesse, reserve, checksum. */
-static const uint8_t cibles[NOMBRE_CIBLES][TAILLE_TRAME] = {
-  { 0x55, 0x00, 0x64, 0x32, 0x00, 0xEB },
-  { 0x55, 0x01, 0x32, 0x32, 0x00, 0xBA },
-  { 0x55, 0x07, 0x28, 0x50, 0x00, 0xD4 },
-  { 0x55, 0x02, 0x50, 0x28, 0x00, 0xCF }
+/* Chaque jeu est un instantane : les quatre vehicules se rapprochent du radar.
+ * Une trame contient : entete, ID, distance (m), vitesse (km/h), reserve, checksum. */
+static uint8_t jeux_donnees[][TAILLE_JEU] = {
+  { /* t=0 ms */
+    0x55, 0x00, 0x64, 0x32, 0x00, 0xEB, /* Vehicule 0 : 100 m, 50 km/h. */
+    0x55, 0x01, 0x32, 0x32, 0x00, 0xBA, /* Vehicule 1 : 50 m, 50 km/h. */
+    0x55, 0x07, 0x28, 0x50, 0x00, 0xD4, /* Vehicule 7 : 40 m, 80 km/h. */
+    0x55, 0x02, 0x50, 0x28, 0x00, 0xCF  /* Vehicule 2 : 80 m, 40 km/h. */
+  },
+  { /* t=120 ms : chaque vehicule s'est rapproche de 5 m. */
+    0x55, 0x00, 0x5F, 0x32, 0x00, 0xE6,
+    0x55, 0x01, 0x2D, 0x32, 0x00, 0xB5,
+    0x55, 0x07, 0x23, 0x50, 0x00, 0xCF,
+    0x55, 0x02, 0x4B, 0x28, 0x00, 0xCA
+  },
+  { /* t=240 ms : poursuite de l'approche. */
+    0x55, 0x00, 0x5A, 0x32, 0x00, 0xE1,
+    0x55, 0x01, 0x28, 0x32, 0x00, 0xB0,
+    0x55, 0x07, 0x1E, 0x50, 0x00, 0xCA,
+    0x55, 0x02, 0x46, 0x28, 0x00, 0xC5
+  },
+  { /* t=360 ms : poursuite de l'approche. */
+    0x55, 0x00, 0x55, 0x32, 0x00, 0xDC,
+    0x55, 0x01, 0x23, 0x32, 0x00, 0xAB,
+    0x55, 0x07, 0x19, 0x50, 0x00, 0xC5,
+    0x55, 0x02, 0x41, 0x28, 0x00, 0xC0
+  },
+  { /* t=480 ms : poursuite de l'approche. */
+    0x55, 0x00, 0x50, 0x32, 0x00, 0xD7,
+    0x55, 0x01, 0x1E, 0x32, 0x00, 0xA6,
+    0x55, 0x07, 0x14, 0x50, 0x00, 0xC0,
+    0x55, 0x02, 0x3C, 0x28, 0x00, 0xBB
+  }
 };
 
 typedef struct {
@@ -20,21 +48,15 @@ typedef struct {
 
 static void on_timer(void *user_data) {
   radar_state_t *radar = (radar_state_t *)user_data;
-  uint8_t donnees[NOMBRE_CIBLES * TAILLE_TRAME];
-  uint32_t longueur = 0u;
+  static uint8_t jeu_index;
+  uint8_t *jeu = jeux_donnees[jeu_index];
 
-  for (uint8_t cible = 0u; cible < NOMBRE_CIBLES; cible++) {
-    uint8_t checksum = 0u;
-    for (uint8_t octet = 0u; octet < TAILLE_TRAME - 1u; octet++) {
-      uint8_t valeur = cibles[cible][octet];
-      donnees[longueur++] = valeur;
-      checksum = (uint8_t)(checksum + valeur);
-    }
-    donnees[longueur++] = checksum;
-  }
-
-  if (!uart_write(radar->uart, donnees, longueur)) {
+  if (!uart_write(radar->uart, jeu, sizeof(jeux_donnees[0]))) {
     printf("Erreur: uart_write a echoue\n");
+  }
+  jeu_index++;
+  if (jeu_index >= sizeof(jeux_donnees) / sizeof(jeux_donnees[0])) {
+    jeu_index = 0u;
   }
 }
 

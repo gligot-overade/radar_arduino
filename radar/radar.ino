@@ -11,6 +11,7 @@
 
 static Adafruit_SSD1306 radar_display(
 	RADAR_OLED_WIDTH, RADAR_OLED_HEIGHT, &Wire, RADAR_OLED_RESET_PIN);
+static unsigned long last_radar_controller_ms;
 static unsigned long last_affichage_controller_ms;
 static uint8_t traced_distance[RADAR_TARGET_COUNT];
 static uint8_t traced_speed[RADAR_TARGET_COUNT];
@@ -27,6 +28,27 @@ static int serial_printf_putc(char character, FILE *stream)
 static bool connect_c_output_to_serial()
 {
 	return fdevopen(serial_printf_putc, nullptr) != nullptr;
+}
+
+extern "C" uint8_t radar_uart_rx_ready(void)
+{
+	return Serial.available() > 0 ? 1u : 0u;
+}
+
+extern "C" uint8_t radar_uart_rx_available(void)
+{
+	return static_cast<uint8_t>(Serial.available());
+}
+
+extern "C" uint8_t radar_uart_read_status(void)
+{
+	return 0u;
+}
+
+extern "C" uint8_t radar_uart_read_byte(void)
+{
+	int value = Serial.read();
+	return value < 0 ? 0u : static_cast<uint8_t>(value);
 }
 
 extern "C" bool radar_oled_write_line(void *context, uint8_t row,
@@ -85,16 +107,20 @@ void setup()
 	}
 	affichage_init(radar_oled_write_line, &radar_display);
 	aquisition_init();
-	/* aquisition_init configure l'UART pour le radar et active RX seulement. */
-	UCSR0B |= (1u << TXEN0);
-	last_affichage_controller_ms = millis();
+	last_radar_controller_ms = millis();
+	last_affichage_controller_ms = last_radar_controller_ms;
 }
 
 void loop()
 {
 	unsigned long now = millis();
-	read_radar();
-	trace_radar_targets();
+
+	if ((unsigned long)(now - last_radar_controller_ms) >=
+		CONFIG_RADAR_CONTROLLER_PERIODE_MS) {
+		last_radar_controller_ms = now;
+		read_radar((uint32_t)now);
+		trace_radar_targets();
+	}
 
 	if ((unsigned long)(now - last_affichage_controller_ms) >=
 		CONFIG_AFFICHAGE_CONTROLLER_PERIODE_MS) {
