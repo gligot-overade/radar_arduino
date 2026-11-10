@@ -11,7 +11,6 @@
 
 static Adafruit_SSD1306 radar_display(
 	RADAR_OLED_WIDTH, RADAR_OLED_HEIGHT, &Wire, RADAR_OLED_RESET_PIN);
-static unsigned long last_radar_controller_ms;
 static unsigned long last_affichage_controller_ms;
 static uint8_t traced_distance[RADAR_TARGET_COUNT];
 static uint8_t traced_speed[RADAR_TARGET_COUNT];
@@ -88,19 +87,14 @@ void setup()
 	aquisition_init();
 	/* aquisition_init configure l'UART pour le radar et active RX seulement. */
 	UCSR0B |= (1u << TXEN0);
-	last_radar_controller_ms = millis();
-	last_affichage_controller_ms = last_radar_controller_ms;
+	last_affichage_controller_ms = millis();
 }
 
 void loop()
 {
 	unsigned long now = millis();
-	if ((unsigned long)(now - last_radar_controller_ms) >=
-		CONFIG_RADAR_CONTROLLER_PERIODE_MS) {
-		last_radar_controller_ms = now;
-		read_radar();
-		trace_radar_targets();
-	}
+	read_radar();
+	trace_radar_targets();
 
 	if ((unsigned long)(now - last_affichage_controller_ms) >=
 		CONFIG_AFFICHAGE_CONTROLLER_PERIODE_MS) {

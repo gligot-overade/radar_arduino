@@ -102,7 +102,6 @@ void read_radar(void)
 		/* Le backend fournit les indicateurs d'erreur et l'octet reçu. */
 		uint8_t status = RADAR_UART_READ_STATUS();
 		uint8_t byte = RADAR_UART_READ_BYTE();
-        printf(" %02X", byte);
 		if (RADAR_UART_STATUS_HAS_ERROR(status)) {
 			/* Erreur de trame, débordement UART ou parité : abandonne l'enregistrement. */
             printf("Erreur: UART status=%02X, abandon de l'enregistrement\n", status);
