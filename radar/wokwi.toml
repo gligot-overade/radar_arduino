@@ -1,0 +1,8 @@
+[wokwi]
+version = 1
+firmware = 'build/radar.ino.hex'
+elf = 'build/radar.ino.elf' 
+
+[[chip]]
+name = 'radar'
+binary = 'radar.chip.wasm'

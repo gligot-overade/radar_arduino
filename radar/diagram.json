@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "author": "Anonymous maker",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-nano", "id": "nano", "top": -24, "left": -29.3, "attrs": {} },
+    {
+      "type": "board-ssd1306",
+      "id": "oled1",
+      "top": 22.34,
+      "left": 192.23,
+      "attrs": { "i2cAddress": "0x3c" }
+    },
+    { "type": "chip-radar", "id": "chip1", "top": -94.98, "left": 52.8, "attrs": {} },
+    { "type": "wokwi-vcc", "id": "vcc1", "top": -200.84, "left": 9.6, "attrs": {} },
+    { "type": "wokwi-gnd", "id": "gnd1", "top": 115.2, "left": 153, "attrs": {} }
+  ],
+  "connections": [
+    [ "nano:5V", "vcc1:VCC", "red", [ "v19.2", "h-163.2", "v-230.4" ] ],
+    [ "chip1:VCC", "vcc1:VCC", "red", [ "v-86.4", "h-144" ] ],
+    [ "oled1:VCC", "vcc1:VCC", "red", [ "v-57.6", "h0.15", "v-144" ] ],
+    [ "chip1:GND", "nano:GND.1", "black", [ "v163.2", "h-36.59" ] ],
+    [ "chip1:GND", "oled1:GND", "black", [ "v76.8", "h40.21" ] ],
+    [ "chip1:GND", "gnd1:GND", "black", [ "v0" ] ],
+    [ "chip1:TX", "nano:0", "green", [ "h-28.8", "v57.6", "h86.4" ] ],
+    [ "chip1:RX", "nano:1", "cyan", [ "h-19.2", "v38.4", "h86.4" ] ],
+    [ "nano:A5", "oled1:SCL", "purple", [ "v124.8", "h278.4", "v-192", "h-96.3" ] ],
+    [ "nano:A4", "oled1:SDA", "yellow", [ "v134.4", "h268.8", "v-192", "h-67.27" ] ]
+  ],
+  "dependencies": {}
+}

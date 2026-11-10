@@ -1,0 +1,11 @@
+{
+  "name": "radar",
+  "author": "",
+  "pins": [
+    "TX",
+    "RX",
+    "GND",
+    "VCC"
+  ],
+  "controls": []
+}
